@@ -93,6 +93,24 @@ RSS → ffmpeg → Parakeet MLX → Ollama → DuckDB → Export
 - `p3 write --topic "Your Topic"` - Generate blog posts with AP English grading
 - `p3 status` - Show processing pipeline status
 
+Fetch options
+
+- `p3 fetch --force`: Re-download existing episodes and update DB records (matched by episode `url`).
+- `p3 fetch --dry-run`: Discover episodes and report actions without downloading audio or writing to the database.
+
+Examples:
+
+```bash
+# Re-download and update DB by URL
+p3 fetch --force
+
+# Show what would be (re-)downloaded without performing downloads
+p3 fetch --dry-run
+
+# Combine: show what would be re-downloaded
+p3 fetch --dry-run --force
+```
+
 ## 🔧 Configuration
 
 Edit `config/feeds.yaml` to add your podcast feeds:

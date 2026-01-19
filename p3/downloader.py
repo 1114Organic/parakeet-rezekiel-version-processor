@@ -37,17 +37,59 @@ class PodcastDownloader:
             limit = self.max_episodes
 
         try:
-            feed = feedparser.parse(rss_url)
+            # Fetch the feed content via requests first to avoid issues some
+            # servers present when parsed directly from URL.
+            resp = requests.get(rss_url, timeout=30)
+            resp.raise_for_status()
+            feed = feedparser.parse(resp.text)
             episodes = []
             
             for entry in feed.entries[:limit]:
-                # Find audio enclosure
+                # Find audio enclosure or link. Broaden detection to handle
+                # enclosures, links (rel=enclosure), media_content, and
+                # fall back to entry.link when it looks like an audio file.
                 audio_url = None
+                audio_exts = ('.mp3', '.m4a', '.aac', '.wav', '.ogg', '.opus', '.flac', '.mp4')
+
+                # 1) Check explicit enclosures
                 for enclosure in entry.get('enclosures', []):
-                    if enclosure.type and 'audio' in enclosure.type:
-                        audio_url = enclosure.href
+                    href = enclosure.get('href') if hasattr(enclosure, 'get') else getattr(enclosure, 'href', None)
+                    typ = enclosure.get('type') if hasattr(enclosure, 'get') else getattr(enclosure, 'type', None)
+                    if not href:
+                        continue
+                    if (typ and 'audio' in typ) or href.lower().endswith(audio_exts):
+                        audio_url = href
                         break
-                
+
+                # 2) Check generic links (some feeds put enclosure info here)
+                if not audio_url:
+                    for link in entry.get('links', []):
+                        href = link.get('href') if hasattr(link, 'get') else getattr(link, 'href', None)
+                        rel = link.get('rel') if hasattr(link, 'get') else getattr(link, 'rel', None)
+                        typ = link.get('type') if hasattr(link, 'get') else getattr(link, 'type', None)
+                        if not href:
+                            continue
+                        if (rel and rel == 'enclosure') or (typ and 'audio' in typ) or href.lower().endswith(audio_exts):
+                            audio_url = href
+                            break
+
+                # 3) Check media_content (media RSS)
+                if not audio_url:
+                    for media in entry.get('media_content', []):
+                        href = media.get('url') if hasattr(media, 'get') else getattr(media, 'url', None)
+                        typ = media.get('type') if hasattr(media, 'get') else getattr(media, 'type', None)
+                        if not href:
+                            continue
+                        if (typ and 'audio' in typ) or href.lower().endswith(audio_exts):
+                            audio_url = href
+                            break
+
+                # 4) Fallback to entry.link if it points to an audio file
+                if not audio_url:
+                    link_href = entry.get('link')
+                    if link_href and isinstance(link_href, str) and link_href.lower().endswith(audio_exts):
+                        audio_url = link_href
+
                 if not audio_url:
                     continue
 
@@ -138,8 +180,12 @@ class PodcastDownloader:
             os.unlink(input_path)
             return None
 
-    def process_feed(self, rss_url: str) -> int:
-        """Process a single RSS feed and download new episodes."""
+    def process_feed(self, rss_url: str, force: bool = False, dry_run: bool = False) -> int:
+        """Process a single RSS feed and download new episodes.
+
+        If `force` is True, existing episodes (matched by URL) will be
+        re-downloaded and their `file_path` updated in the database.
+        """
         podcast = self.db.get_podcast_by_url(rss_url)
         if not podcast:
             print(f"Podcast not found for URL: {rss_url}")
@@ -149,12 +195,23 @@ class PodcastDownloader:
         downloaded_count = 0
         
         for ep_data in episodes:
-            # Skip if episode already exists
-            if self.db.episode_exists(ep_data['url']):
+            # Check whether episode exists
+            exists = self.db.episode_exists(ep_data['url'])
+            if exists and not force:
                 continue
-                
-            print(f"Downloading: {ep_data['title']}")
-            
+
+            if exists and force:
+                action_msg = f"Would re-download: {ep_data['title']}" if dry_run else f"Re-downloading: {ep_data['title']}"
+            else:
+                action_msg = f"Would download: {ep_data['title']}" if dry_run else f"Downloading: {ep_data['title']}"
+
+            print(action_msg)
+
+            if dry_run:
+                # In dry-run mode, don't perform network I/O or DB writes; just report
+                downloaded_count += 1
+                continue
+
             # Generate safe filename
             safe_title = "".join(c for c in ep_data['title'] if c.isalnum() or c in (' ', '-', '_')).rstrip()
             filename = f"{podcast['id']}_{safe_title[:50]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -162,14 +219,18 @@ class PodcastDownloader:
             # Download episode
             file_path = self.download_episode(ep_data['url'], filename)
             if file_path:
-                # Add to database
-                self.db.add_episode(
-                    podcast_id=podcast['id'],
-                    title=ep_data['title'],
-                    date=ep_data['date'],
-                    url=ep_data['url'],
-                    file_path=file_path
-                )
+                # Add or update database record
+                if exists:
+                    # Update existing episode record with new file path (re-download)
+                    self.db.update_episode_file_path_by_url(ep_data['url'], file_path, ep_data['date'])
+                else:
+                    self.db.add_episode(
+                        podcast_id=podcast['id'],
+                        title=ep_data['title'],
+                        date=ep_data['date'],
+                        url=ep_data['url'],
+                        file_path=file_path
+                    )
                 downloaded_count += 1
                 print(f"✓ Downloaded: {ep_data['title']}")
             else:
@@ -177,24 +238,30 @@ class PodcastDownloader:
         
         return downloaded_count
 
-    def fetch_all_feeds(self, feeds_config: List[Dict]) -> Dict[str, int]:
-        """Process all configured RSS feeds."""
+    def fetch_all_feeds(self, feeds_config: List[Dict], force: bool = False, dry_run: bool = False) -> Dict[str, int]:
+        """Process all configured RSS feeds.
+
+        `force` is a global override to re-download existing episodes.
+        `dry_run` when True will only report actions without network I/O or DB writes.
+        """
         results = {}
-        
+
         for feed_config in feeds_config:
             name = feed_config['name']
             url = feed_config['url']
             category = feed_config.get('category')
-            
+            # Per-feed force/dry_run options override global flags
+            feed_force = feed_config.get('force', force)
+            feed_dry_run = feed_config.get('dry_run', dry_run)
             print(f"Processing feed: {name}")
-            
+
             # Ensure podcast exists in database
             self.add_feed(name, url, category)
-            
+
             # Process episodes
-            count = self.process_feed(url)
+            count = self.process_feed(url, force=feed_force, dry_run=feed_dry_run)
             results[name] = count
-            
+
             print(f"Downloaded {count} new episodes from {name}")
-        
+
         return results

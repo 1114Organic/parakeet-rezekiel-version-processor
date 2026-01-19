@@ -6,15 +6,22 @@ feeds:
   - name: "a16z Podcast"
     url: "https://feeds.feedburner.com/a16z"
     category: "tech"
+    # Optional per-feed overrides:
+    # force: true      # re-download existing episodes for this feed
+    # dry_run: true    # report what would be downloaded for this feed
     
   - name: "Y Combinator Podcast"
     url: "https://blog.ycombinator.com/feed/"
     category: "startups"
 
+# Per-feed options (optional):
+# - `force`: when true will re-download episodes already present in the DB (match by `url`)
+# - `dry_run`: when true will only report actions for that feed without downloads or DB writes
+
 # Global settings
 settings:
   audio_format: "wav"
-  max_episodes_per_feed: 10
+  max_episodes_per_feed: 10  # global default; can be overridden per-feed via `max_episodes` key
   cleanup_old_files: true
   cleanup_days: 30
   

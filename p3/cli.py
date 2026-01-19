@@ -51,8 +51,10 @@ def main(ctx, config, db):
 
 @main.command()
 @click.option('--max-episodes', default=None, type=int, help='Max episodes per feed')
+@click.option('--force', is_flag=True, help='Re-download existing episodes even if recorded in DB')
+@click.option('--dry-run', is_flag=True, help='Show what would be downloaded without performing downloads')
 @click.pass_context
-def fetch(ctx, max_episodes):
+def fetch(ctx, max_episodes, force, dry_run):
     """Download new podcast episodes from configured RSS feeds."""
     config = load_config(ctx.obj['config_path'])
     db = ctx.obj['db']
@@ -74,7 +76,9 @@ def fetch(ctx, max_episodes):
         return
     
     total_downloaded = 0
-    results = downloader.fetch_all_feeds(feeds)
+    # Pass CLI-level force flag into feed processing. Individual feeds may set `force: true`.
+    # Pass CLI-level flags into feed processing. Individual feeds may set `force: true` or `dry_run: true`.
+    results = downloader.fetch_all_feeds(feeds, force=force, dry_run=dry_run)
     
     # Display results table
     table = Table(title="Download Results")

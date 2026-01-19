@@ -114,6 +114,19 @@ class P3Database:
         """, (next_id, podcast_id, title, date, url, file_path))
         return next_id
 
+    def update_episode_file_path_by_url(self, url: str, file_path: str, date: datetime = None):
+        """Update existing episode record's file path (used for re-downloads)."""
+        if date is not None:
+            self.conn.execute(
+                "UPDATE episodes SET file_path = ?, date = ?, status = ? WHERE url = ?",
+                (file_path, date, 'downloaded', url)
+            )
+        else:
+            self.conn.execute(
+                "UPDATE episodes SET file_path = ?, status = ? WHERE url = ?",
+                (file_path, 'downloaded', url)
+            )
+
     def episode_exists(self, url: str) -> bool:
         """Check if episode already exists."""
         result = self.conn.execute(

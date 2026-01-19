@@ -85,3 +85,9 @@ RSS → ffmpeg → Parakeet MLX → Ollama → DuckDB → Export
 - **Parakeet fails**: Falls back to Whisper automatically
 - **Ollama connection**: Check `ollama serve` is running
 - **Memory issues**: Reduce episodes per feed in config
+
+## Developer Notes
+
+- Added `--force` and `--dry-run` to the `p3 fetch` command (2026-01-19). These flags are handled in `p3/cli.py` and propagated to `PodcastDownloader.fetch_all_feeds()`.
+- Re-download behavior updates existing episode rows via `P3Database.update_episode_file_path_by_url(url, file_path, date)` to avoid duplicate `url` entries.
+- RSS fetching was made more robust by using `requests.get()` prior to `feedparser.parse()` and by broadening audio detection to `enclosures`, `links` (rel=enclosure), `media_content`, and common audio file extensions.

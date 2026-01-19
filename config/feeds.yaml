@@ -1,5 +1,34 @@
 feeds:
   # High-value business/investment podcasts
+  - name: "a16z Podcast"
+    url: "https://feeds.simplecast.com/JGE3yC0V"
+    category: "news"
+
+  - name: "a16z - Ben and Marc Podcast"
+    url: "https://feeds.simplecast.com/mAT9rqvu"
+    category: "news"
+
+  - name: "All in Podcast"
+    url: "https://allinchamathjason.libsyn.com/rss"
+    category: "business"
+
+  - name: "Diary of a CEO"
+    url: "https://rss2.flightcast.com/xmsftuzjjykcmqwolaqn6mdn"
+    category: "business"
+
+  - name: "This Week in Tech"
+    url: "https://feeds.twit.tv/twit.xml"
+    category: "technology"
+
+  - name: "Product Coffee"
+    url: "https://anchor.fm/s/bb90e50/podcast/rss"
+    cataegory: "technology"
+
+  - name:  "Y Combinator Podcast"
+    url: "https://blog.ycombinator.com/feed/"
+    category: "startups"  
+
+# High-value business/investment podcasts
   - name: "Lenny's Podcast"
     url: "https://feeds.simplecast.com/UZ12E8Qw"
     category: "product"
@@ -15,14 +44,6 @@ feeds:
   - name: "The Twenty Minute VC"
     url: "https://feeds.simplecast.com/6ea96d8b"
     category: "venture"
-    
-  - name: "a16z Podcast"
-    url: "https://feeds.simplecast.com/JGE3yC0V"
-    category: "venture"
-    
-  - name: "SaaStr Podcast"
-    url: "https://www.saastr.com/feed/podcast/"
-    category: "saas"
     
   # AI/Tech focused
   - name: "The AI Breakdown"
