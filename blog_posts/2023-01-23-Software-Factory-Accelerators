@@ -1,0 +1,17 @@
+In a previous post, we talked about our software factory, Benefits Integration Platform (BIP), and how our technology solutions enable our product teams to create new features and functionalities that streamline Veterans benefits processing for the Veterans Affairs Benefits and Memorials (VA BAM) Services portfolio. In this article, we’ll explore another service we provide—the Accelerators. 
+
+At the heart of the BIP Platform is the Accelerators team, creating Frameworks -Java Spring Boot, REACT and Kafka Stream Processors, shared libraries, and archetypes. Our Accelerators team supports our 80+ scrum teams by removing the non-functional requirements and enabling developers to start writing code on day one. Developers no longer must figure out what libraries are required, how to create secure pipelines, or how to consume AWS Cloud services. To further support our agile teams, we’ve added the Benefits Innovation Hub built on Spotify’s Backstage for self-service, golden-path software templates, service catalog, and techdocs capabilities. This reduction of sprint zero activities, friction and wait time increases team performance, standardization, and governance for software created on the Platform.
+
+The Accelerators is our secret sauce for many reasons. This team has supported some of our Zero-Trust initiatives by building out highly opinionated DevSecOps pipelines that perform SBOM checks/ attestations, active and passive security scans, quality gates, and functional and performance testing. Additionally, the Accelerators make the tools move valuable through integrations with other platforms, such as Slack and Jira, which increase visibility and accountability. We all want to move faster than yesterday, and the Accelerators team supports our tenants with consistency, governance, and security. The small things add up—like building in standard logging and monitoring archetypes for tenants to follow along, or secrets management, auditing, or exception handling.
+
+Help us Accelerate the Mission
+
+The diversity of our team, backgrounds and opinions makes us stronger and enables us to produce a better product for our clients. We value communication, commitment, respect, courage, ingenuity, and quality. These values help define our social contract with each other and how we will work in delivering value to our customers.
+
+We are looking for talented Full Stack Developers, DevOps, Platform, and Cloud engineers who can be creative, learn fast and be a great human all while supporting a tremendous mission. The issues we faced a few years ago will not be the same ones we will face tomorrow. We need people who want to be on the cutting edge of technology, working with huge data sets in a high-volume environment. Join us—the world can’t wait.
+
+Local to the Charleston, SC area? Join us January 24, 2023 for an open-house.
+
+Interested in using your technical curiosity and mission-driven passion to redefine healthcare? Join the Booz Allen Talent Community to learn more about our growth opportunities, mentorship, and collaborative colleagues. Please indicate you’re interested in our Health/Science careers OR working on our Health Missions.
+
+My thoughts are my own and do not necessarily reflect the views of Booz Allen Hamilton.

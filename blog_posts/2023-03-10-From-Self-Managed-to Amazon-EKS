@@ -1,0 +1,17 @@
+In a previous post, we introduced our Benefits Integration Platform (BIP) and how our technology solutions enable our product teams to create new features and functionalities that streamline Veterans benefits processing for the Veterans Affairs Benefits and Memorials (VA BAM) Services portfolio. In this article, we’ll take a deeper look into our Platform and why we are migrating to Amazon Elastic Kubernetes Service (Amazon EKS).
+
+Making the Switch to Amazon EKS
+
+When working with federal government sensitive data, our workloads are required to be hosted in AWS GovCloud, and in our case, in their FEDRAMP high environment. Our current version of the BIP platform (Open-Source Kubernetes) was deployed in AWS GovCloud before Amazon EKS was available to us. Now that it is, we are now making the move. At the start of the process, we explored various distributions of Kubernetes and found the AWS managed service fit our portfolio and team the best.
+
+As a part of the migration, we have upgraded some of our tools and processes based on lessons learned, from running a high performing platform for over four years. In the early days there was much excitement about creating a new product - a platform- but as time has moved on, we recognized that the benefits realized by our tenants are not in who can provide the best open-source Kubernetes platform with all the bells and whistles but in one layer up in the frameworks, archetypes, services, and developer experience. Post migration, the platform teams will have more opportunity to focus on the tenants, their needs, and the ability to layer on more services enabling them to deliver with supporting tools, processes, and automation.
+
+With over 40+ tenants and 100+ deployable applications in production, the migration to a new version of the BIP Platform is slightly more complicated than standing up one from scratch. Our team has been doing its due diligence in testing and validating the new version of the BIP Platform running on EKS before the final cut over with tenant workloads. Although AWS services like RDS and S3 are not impacted by the migration, micro-services and tooling that run on the platform, will need special care to ensure all functionality is migrated. The team started with validating our BIP Reference Person (BRP), created by our Accelerators team, which is our sample tenant with close to 400 automated tests. Once BRP passed all its tests we began marching through all our tenant product lines with a goal of being completed next month.
+
+This migration to Amazon EKS is just the beginning. We plan to meet additional Zero-Trust initiatives, automate more of our toil with a new SRE program, tenant self-service, AI/ML capabilities to our shared services and many new tenants supporting the BAM portfolio.
+
+Join our Team of Digital Innovators
+
+We are looking for talented DevOps & Software Engineers and Solution Architects to support our Backstage implementation, Kafka event driven architecture and our multi-tenanted Kubernetes platform who can be creative, learn fast and be a great human, all while supporting a tremendous mission. The issues we faced a few years ago will not be the same ones we will face tomorrow, so we need people who want to be on the cutting edge of technology. Join us—the world can’t wait.
+
+My thoughts are my own and do not necessarily reflect the views of Booz Allen Hamilton.

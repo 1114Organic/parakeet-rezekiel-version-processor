@@ -78,6 +78,26 @@ class P3Database:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        
+        # Create indexes for frequently queried columns
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_episodes_url ON episodes(url)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_episodes_status ON episodes(status)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_summaries_digest_date ON summaries(digest_date)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_episodes_podcast_id ON episodes(podcast_id)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_transcripts_episode_id ON transcripts(episode_id)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_summaries_episode_id ON summaries(episode_id)
+        """)
 
     def add_podcast(self, title: str, rss_url: str, category: str = None) -> int:
         """Add new podcast feed."""

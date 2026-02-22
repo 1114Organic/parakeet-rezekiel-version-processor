@@ -1,0 +1,20 @@
+In a previous post, we introduced our Benefits Integration Platform (BIP) and how our technology solutions enable our product teams to create new features and functionalities that streamline Veterans benefits processing for the Veterans Affairs Benefits and Memorials Services (VA BAM) portfolio. In this article, we’ll look at one of the services we provide—Data streaming.
+
+Leveraging Kafka to Enable Events and Data Streaming
+
+In 2021, a platform feature request for data streaming and eventing technologies lead to an analysis of alternatives (AoA) and the team choosing Confluent as our solution. Since then, we have tested various deployments and now have running workloads in production. Our Solutions team partnered with our customer to identify over 100 strategic data and key events that will be created on Kafka servicing the BAM portfolio and most recently, the PACT Act legislative changes.
+
+The team is now iterating on the most logical and impactful way to create these domain integrations. The streams will be added to our catalog of services for consumers to connect to, or for others to utilize tools such as KSQL, to make the data more valuable for their project/product line. The BIP Platform teams are going the extra-mile to create a streaming processor framework to make the consuming or producing of events standardized and easier for our tenants.
+
+The Benefits of an Event-Driven Architecture
+
+During our Kafka talk last year, we spoke about how VA transactional business processes are best served by an event-driven architecture that unlocks the data required to increase awareness and velocity for providing Veteran benefits. The capability to push out near real-time data on a Kafka stream will enable faster, more timely benefits processing. Ultimately, Kafka creates a significantly better use of resources and communications between VA services and those dependent on the same data. 
+
+Help us Build the Future of Software Innovation
+
+The BIP Platform Solutions team has developed a multi-phased design and implementation plan to support the BAM Portfolio. This is where we need your help. We are looking for solution architects, developers to build stream processing applications, Kafka specialists to help build out the catalog of streams running on the Platform using KSQL and keep it running at speed, and data analysts who want to dig into processes and data to help unlock the next group of events.
+
+Interested in using your technical curiosity and mission-driven passion to redefine healthcare? Comment below or join the Booz Allen Talent Community to learn more about our growth opportunities, mentorship, and collaborative colleagues. Please indicate you’re interested in our Health/Science careers OR working on our Health Missions.
+
+My thoughts are my own and do not necessarily reflect the views of Booz Allen Hamilton.
+

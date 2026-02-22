@@ -28,6 +28,52 @@ class BlogWriter:
         self.llm_model = llm_model
         self.target_grade = target_grade
         self.max_iterations = 3
+    
+    def extract_topics_from_summaries(self, summaries: List[Dict[str, Any]], top_n: int = 3) -> List[str]:
+        """Extract high-confidence topics from podcast summaries.
+        
+        Args:
+            summaries: List of summary dicts from get_summaries_by_date()
+            top_n: Number of top topics to return
+            
+        Returns:
+            List of topic strings extracted from key_topics/themes
+        """
+        topic_counts = {}
+        
+        for summary in summaries:
+            # Extract from key_topics and themes
+            for topic in summary.get('key_topics', []):
+                if isinstance(topic, str):
+                    topic_counts[topic] = topic_counts.get(topic, 0) + 1
+            
+            for theme in summary.get('themes', []):
+                if isinstance(theme, str):
+                    topic_counts[theme] = topic_counts.get(theme, 0) + 1
+        
+        # Sort by frequency and return top N
+        sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)
+        return [topic for topic, count in sorted_topics[:top_n]]
+    
+    def get_auto_topics(self, summaries: List[Dict[str, Any]], 
+                       config_topics: Optional[List[str]] = None) -> List[str]:
+        """Get topics for automated writing.
+        
+        Prefers configured topics if available, falls back to auto-extracted topics.
+        
+        Args:
+            summaries: List of summary dicts from get_summaries_by_date()
+            config_topics: Optional list of topics from config (auto_write_topics)
+            
+        Returns:
+            List of topics to write about
+        """
+        if config_topics and len(config_topics) > 0:
+            return config_topics
+        
+        # Fall back to extracting from summaries
+        extracted = self.extract_topics_from_summaries(summaries, top_n=2)
+        return extracted if extracted else ["Emerging Technology Trends"]
         
     def generate_blog_post_from_digest(self, topic: str, digest_data: Dict[str, Any], 
                                      context_posts: List[str] = None) -> Dict[str, Any]:
@@ -346,13 +392,131 @@ inspired_by: "Tomasz Tunguz's AP English grading system"
         twitter_response = self._generate_with_llm(twitter_prompt)
         linkedin_response = self._generate_with_llm(linkedin_prompt)
         
-        # Parse responses (simple parsing - could be enhanced)
-        twitter_posts = re.findall(r'POST \d+: (.+?)(?=POST \d+:|$)', twitter_response, re.DOTALL)
-        linkedin_posts = re.findall(r'POST \d+: (.+?)(?=POST \d+:|$)', linkedin_response, re.DOTALL)
+        # Parse responses - more robust parsing that handles variations
+        twitter_posts = self._parse_posts(twitter_response, num_posts=3)
+        linkedin_posts = self._parse_posts(linkedin_response, num_posts=2)
+        
+        # Fallback: if parsing failed, create simple posts from the blog content
+        if not twitter_posts:
+            twitter_posts = [
+                f"{topic}: {blog_post[:250]}... #AI #Innovation",
+                f"Key insight from '{topic}': {sentences[0][:240] if sentences else blog_post[:240]}",
+                f"Read more about {topic} and its implications for business and tech. #Insights"
+            ]
+        
+        if not linkedin_posts:
+            linkedin_posts = [
+                f"{topic}\n\n{blog_post[:300]}\n\nLearn more about this important topic.",
+                f"Exploring {topic}: Key takeaways and what it means for the future."
+            ]
         
         return {
-            'twitter': [post.strip() for post in twitter_posts],
-            'linkedin': [post.strip() for post in linkedin_posts],
+            'twitter': [post.strip() for post in twitter_posts if post],
+            'linkedin': [post.strip() for post in linkedin_posts if post],
             'quotes': quotes[:3],  # Top 3 quotable excerpts
             'insights': insights[:5]  # Top 5 key insights
         }
+
+    def _parse_posts(self, response: str, num_posts: int = 3) -> List[str]:
+        """Parse posts from LLM response with fallback strategies."""
+        posts = []
+        
+        # Try pattern: "POST 1: content" or "POST 1:\ncontent"
+        pattern = r'(?:POST|post)\s*\d+:?\s*(.+?)(?=(?:POST|post)\s*\d+:|$)'
+        matches = re.findall(pattern, response, re.IGNORECASE | re.DOTALL)
+        
+        if matches:
+            posts = [m.strip() for m in matches]
+        else:
+            # Fallback: split by newlines and look for numbered items
+            lines = response.split('\n')
+            for line in lines:
+                if line.strip() and len(line.strip()) > 20:
+                    posts.append(line.strip())
+        
+        return posts[:num_posts]
+
+    def save_social_posts(self, social_posts: Dict[str, List[str]], topic: str, 
+                         blog_result: Dict[str, Any] = None,
+                         output_dir: str = "SocialMedia_Posts") -> Dict[str, str]:
+        """Save generated social media posts to files with podcast reference.
+        
+        Args:
+            social_posts: Dict containing 'twitter' and 'linkedin' post lists
+            topic: Topic used for filename
+            blog_result: Blog result dict containing metadata (episode/podcast info)
+            output_dir: Directory to save posts (default: SocialMedia_Posts)
+            
+        Returns:
+            Dict with paths to saved files
+        """
+        output_path = Path(output_dir)
+        output_path.mkdir(exist_ok=True)
+        
+        # Create filename with date and topic slug
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        slug = self._generate_slug(topic)
+        
+        saved_files = {}
+        
+        # Extract podcast reference info
+        podcast_title = ""
+        episode_title = ""
+        if blog_result and blog_result.get('metadata'):
+            podcast_title = blog_result['metadata'].get('podcast_title', '')
+            episode_title = blog_result['metadata'].get('episode_title', '')
+        
+        # Build podcast reference section
+        podcast_ref = ""
+        if podcast_title or episode_title:
+            podcast_ref = f"""
+
+---
+
+## 📻 Source Podcast
+
+**Podcast:** {podcast_title}  
+**Episode:** {episode_title}
+
+To hear the full discussion and additional insights, listen to the complete episode.
+"""
+        
+        # Save Twitter posts
+        if social_posts.get('twitter'):
+            twitter_file = output_path / f"{date_str}-{slug}-twitter.md"
+            twitter_content = f"""# Twitter Posts - {topic}
+
+Generated: {datetime.now().isoformat()}
+
+---
+
+"""
+            for i, post in enumerate(social_posts['twitter'], 1):
+                twitter_content += f"## Post {i}\n\n{post}\n\n"
+            
+            twitter_content += podcast_ref
+            
+            with open(twitter_file, 'w') as f:
+                f.write(twitter_content)
+            saved_files['twitter'] = str(twitter_file)
+        
+        # Save LinkedIn posts
+        if social_posts.get('linkedin'):
+            linkedin_file = output_path / f"{date_str}-{slug}-linkedin.md"
+            linkedin_content = f"""# LinkedIn Posts - {topic}
+
+Generated: {datetime.now().isoformat()}
+
+---
+
+"""
+            for i, post in enumerate(social_posts['linkedin'], 1):
+                linkedin_content += f"## Post {i}\n\n{post}\n\n"
+            
+            linkedin_content += podcast_ref
+            
+            with open(linkedin_file, 'w') as f:
+                f.write(linkedin_content)
+            saved_files['linkedin'] = str(linkedin_file)
+        
+        return saved_files

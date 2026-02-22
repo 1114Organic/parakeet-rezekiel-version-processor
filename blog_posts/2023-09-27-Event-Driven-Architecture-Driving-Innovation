@@ -1,0 +1,55 @@
+n my previous posts, we introduced our Benefits Integration Platform (BIP), which is supported by our Accelerators, Benefits Innovation Hub and how we are using Confluent to modernize Veteran benefits processing. Today I would like to talk about why it makes sense for Government agencies to adopt Event Driven Architecture (EDA) as a part of their modernization journeys and how we are supporting the Veterans Affairs (VA) with their modernization efforts.
+
+Government agencies are highly transactional, and process orientated.  Each citizen service is based on a series of steps or micro-processes that are dependent on the one before to completed.  How we move data from one step to the next or how we keep the citizen customer informed on the process is where EDA can help.
+
+EDA is a software design pattern that allows systems to produce, consume, process, and react to events or changes in state. EDA enables you to build highly scalable, resilient, and loosely coupled solutions that will be successful in your ever-changing environments. EDA coupled with Confluent, the creators of Kafka, is a powerful solution for increasing velocity of your processes and creating transparency to your internal (end users) and external customers (citizens).
+
+Benefits of EDA
+
+EDA enables you to democratize data by making it accessible across product lines and the enterprise without the need for replicating or synchronizing data which has the potential to cause significant issues with stale or incorrect data. Making the data easily accessible while providing governance and security in the process enables faster delivery and innovation. Data streams documented in a catalog makes it extremely ease for others to consume and encourages reuse.
+
+ 
+
+Creating high functioning software teams is a goal for every leader. The State of DevOps Report teach us that deployment frequently, time to restore and lead time for changes all matter when creating highly effective teams and one of the best ways in supporting them is through how you organize and scope your work (cognitive load). Creating independent decoupled microservices accelerates the delivery to your customers and makes for a happier and healthier team. Utilizing Kafka in between your microservices to stream events, facilitates this process by giving the developer a consistent interface to consume and publish to.
+
+One of the significant benefits of the cloud is agility and the ability to stay in front of the rate of change. Having data/events on a data stream and in a state for others to consume easily will allow your teams to take an innovation idea from concept to proof of value very quickly and if your experiment does not work out, remove the consumer of the data stream without consequence to the other solutions. Creating base streams can be done by the product team or a shared services team to encourage data sharing and reuse.  Combing multiple streams or enriching with calculations into topics to create usable data increases the velocity of the teams.
+
+ 
+
+How EDA Works
+
+With a monolith application, a single application called the single database, and the flow of information was easy but came at a cost. There were lots of coordination between teams for delivery and the tightly coupled nature of the product increased risk, slowing down the rate of change and innovation.
+
+As we moved to microservices to decouple the applications, lower risk, and increase velocity, data moved closer to the service. Read only copies of the data was replicated as necessary to process transactions and to be close to the microservice reducing latency which pulled forward extra costs and potential data integrity issues.
+
+With EDA, each service “listens” for data/events it cares about through its subscription to a data stream. Each microservice consumes data or an event from an upstream service via a data stream and then sends its output to another stream for other services to consume rather than sending the output to a centralized database or an adjacent one. 
+
+With this solution, each service can deliver new software changes at their pace/ frequency knowing that the data required will be delivered to them via the Kafka stream and each independent microservice can scale as demand requires. By making cognitive load smaller, the agile teams can move faster with better solutions.
+
+ 
+
+At the VA
+
+For some of our strategic data and processes, we have shared teams creating the Kafka streams for all to utilize in their delivery of services to our Veterans.  Our shared team facilitates onboarding of new consumers and producers with Kafka and EDA consultation, best practices, and governance to support the ecosystem.
+
+Our teams have created a backlog of key events to put onto a data stream accelerating benefits processing.  Rather than polling the database for a state change, each phase in the process subscribes to the preceding step’s data stream to know when it’s time to act.  This backlog of events is listed in a catalog for potential consumers to consume the completed events, be aware of when others will be created or request that certain ones be moved up in the schedule to meet their timelines.
+
+As a part of the process, the Kafka team supports the enablement and path to production for all data streaming on the Platform.  Monitoring dashboard templates start the product teams off and then are customized to meet the requirements of the product and support collecting business metrics to show value.  The Kafka team also performs a Site Reliability Engineering function for the data streaming from creating the connectors to running in production.  The skill sets required to properly support and manage data streaming will range from data base administration, networking, programing and of the Cloud.  Having a Kafka SRE available to support these skill sets and product teams increases the likelihood of success and adoption.
+
+The VA is moving towards proactive engagement with our Veterans, improving timelines of benefits processing.  By moving towards near real-time information sharing through Kafka event streams and EDA, the VA will be able to move faster, be more consistent, share data across product lines thereby shortening the time to deliver benefits to our Veterans. 
+
+ 
+
+How does Confluent Help?
+
+Confluent is a strategic partner of our supporting solutioning, deployments, and education of our teams. Their service and support are second to none and they embrace each mission to help deliver a better product to our citizens. We have been incredibly pleased with their large connector library, response time and solutioning in complex environments.
+
+ 
+
+Help us Build the Future of Software Innovation
+
+The future will not wait, and this is where we need your help. We are looking for solution architects, developers, and Kafka specialists to build stream processing applications, manage Confluent platforms and help change the way the Government creates solutions for the future using EDA and Data Science.
+
+Interested in using your technical curiosity and mission-driven passion to redefine healthcare and citizen services?  Comment below or join the Booz Allen Talent Community to learn more about our growth opportunities, mentorship, and collaborative colleagues.
+
+My thoughts are my own and do not necessarily reflect the views of Booz Allen Hamilton.

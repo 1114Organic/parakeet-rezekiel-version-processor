@@ -2,6 +2,7 @@
 
 import os
 import sys
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 import click
@@ -18,6 +19,17 @@ from .exporter import DigestExporter
 from .writer import BlogWriter
 
 console = Console()
+
+# Configure logging for CLI
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
+cli_logger = logging.getLogger("p3.cli")
+cli_logger.setLevel(logging.INFO)
+fh = logging.FileHandler(LOG_DIR / "cli.log")
+fh.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+cli_logger.addHandler(fh)
 
 
 def load_config(config_path: str = "config/feeds.yaml"):
@@ -96,9 +108,14 @@ def fetch(ctx, max_episodes, force, dry_run):
 @main.command()
 @click.option('--model', default=None, help='Whisper model to use')
 @click.option('--episode-id', type=int, help='Transcribe specific episode')
+@click.option('--workers', default=4, type=int, help='Number of parallel workers for batch transcription (default: 4)')
 @click.pass_context
-def transcribe(ctx, model, episode_id):
-    """Transcribe downloaded audio files."""
+def transcribe(ctx, model, episode_id, workers):
+    """Transcribe downloaded audio files.
+    
+    Transcribes in parallel using multiple worker processes for speed.
+    Use --episode-id to transcribe a single episode.
+    """
     config = load_config(ctx.obj['config_path'])
     db = ctx.obj['db']
     
@@ -121,19 +138,16 @@ def transcribe(ctx, model, episode_id):
         else:
             console.print(f"[red]✗ Failed to transcribe episode {episode_id}[/red]")
     else:
-        console.print("[blue]Transcribing all pending episodes...[/blue]")
         episodes = db.get_episodes_by_status('downloaded')
         
         if not episodes:
             console.print("[yellow]No episodes to transcribe[/yellow]")
             return
         
-        transcribed = 0
-        for episode in track(episodes, description="Transcribing..."):
-            if transcriber.transcribe_episode(episode['id']):
-                transcribed += 1
-        
-        console.print(f"[green]Transcribed {transcribed} episodes[/green]")
+        # Use parallel transcription for batch jobs
+        console.print(f"[blue]Transcribing {len(episodes)} episodes with {workers} parallel workers...[/blue]")
+        transcribed = transcriber.transcribe_all_parallel(num_workers=workers)
+        console.print(f"[green]✓ Transcription complete[/green]")
 
 
 @main.command()
@@ -246,21 +260,30 @@ def status(ctx):
 
 
 @main.command()
-@click.option('--topic', required=True, help='Blog post topic/angle')
+@click.option('--topic', default=None, help='Blog post topic/angle (optional if using --auto)')
+@click.option('--auto', is_flag=True, help='Auto-generate topics from today\'s summaries')
 @click.option('--date', help='Date to use for digest (YYYY-MM-DD), defaults to today')
 @click.option('--target-grade', default=91.0, help='Target grade for AP English teacher (default: 91.0)')
 @click.pass_context
-def write(ctx, topic, date, target_grade):
+def write(ctx, topic, auto, date, target_grade):
     """Generate blog post from podcast digest using AP English grading system.
     
     Inspired by Tomasz Tunguz's innovative iterative writing approach.
+    
+    Use --topic to specify an angle, or --auto to generate topics from summaries.
     """
+    # Validate arguments
+    if not topic and not auto:
+        console.print("[red]Error: Provide either --topic or use --auto flag[/red]")
+        return
+    
     config = load_config(ctx.obj['config_path'])
     db = ctx.obj['db']
     
     settings = config.get('settings', {})
     llm_provider = settings.get('llm_provider', 'ollama')
     llm_model = settings.get('llm_model', 'llama3.2:latest')
+    config_auto_topics = settings.get('auto_write_topics', [])
     
     # Parse date
     if date:
@@ -287,45 +310,60 @@ def write(ctx, topic, date, target_grade):
         target_grade=target_grade
     )
     
-    console.print(f"[blue]Generating blog post: '{topic}'[/blue]")
+    # Determine topics to write
+    if auto:
+        topics_to_write = writer.get_auto_topics(summaries, config_auto_topics)
+        console.print(f"[blue]Auto-generating blog posts for {len(topics_to_write)} topics[/blue]")
+        console.print(f"Topics: {', '.join(topics_to_write)}")
+    else:
+        topics_to_write = [topic]
+        console.print(f"[blue]Generating blog post: '{topic}'[/blue]")
+    
     console.print(f"Using {len(summaries)} podcast summaries from {target_date.date()}")
     console.print(f"Target grade: {target_grade}/100 (inspired by Tomasz Tunguz)")
     
-    # Use the first summary as primary source (could be enhanced to combine multiple)
+    # Use the first summary as primary source
     primary_summary = summaries[0]
     
-    with console.status("[bold green]Writing and grading blog post..."):
-        blog_result = writer.generate_blog_post_from_digest(topic, primary_summary)
+    # Generate blog posts for each topic
+    all_results = []
+    for topic_item in topics_to_write:
+        with console.status(f"[bold green]Writing and grading blog post: {topic_item}..."):
+            blog_result = writer.generate_blog_post_from_digest(topic_item, primary_summary)
+        
+        all_results.append((topic_item, blog_result))
+        
+        # Show results
+        console.print(f"\n[green]✓ Blog post generated![/green]")
+        console.print(f"Topic: {topic_item}")
+        console.print(f"Final Grade: {blog_result['final_grade']} ({blog_result['final_score']}/100)")
+        console.print(f"Iterations: {len(blog_result['iterations'])}")
+        
+        # Save blog post
+        file_path = writer.save_blog_post(blog_result)
+        console.print(f"Saved to: {file_path}")
+        
+        # Generate social media posts
+        console.print(f"[blue]Generating social media posts...[/blue]")
+        social_posts = writer.generate_social_posts(blog_result)
+        
+        # Save social posts to SocialMedia_Posts folder with podcast reference
+        social_files = writer.save_social_posts(social_posts, topic_item, blog_result=blog_result)
+        
+        # Display social posts (brief)
+        console.print("[cyan]📱 Twitter Posts:[/cyan]")
+        for i, post in enumerate(social_posts['twitter'], 1):
+            console.print(f"{i}. {post[:80]}...")
+        
+        if 'twitter' in social_files:
+            console.print(f"[green]✓ Saved to: {social_files['twitter']}[/green]")
+        
+        if 'linkedin' in social_files:
+            console.print(f"[green]✓ LinkedIn posts saved[/green]")
     
-    # Show results
-    console.print(f"\n[green]✓ Blog post generated![/green]")
-    console.print(f"Final Grade: {blog_result['final_grade']} ({blog_result['final_score']}/100)")
-    console.print(f"Iterations: {len(blog_result['iterations'])}")
-    
-    # Save blog post
-    file_path = writer.save_blog_post(blog_result)
-    console.print(f"Saved to: {file_path}")
-    
-    # Generate social media posts
-    console.print(f"\n[blue]Generating social media posts...[/blue]")
-    social_posts = writer.generate_social_posts(blog_result)
-    
-    # Display social posts
-    console.print("\n[cyan]📱 Twitter Posts:[/cyan]")
-    for i, post in enumerate(social_posts['twitter'], 1):
-        console.print(f"{i}. {post}")
-    
-    console.print("\n[cyan]💼 LinkedIn Posts:[/cyan]")
-    for i, post in enumerate(social_posts['linkedin'], 1):
-        console.print(f"{i}. {post[:100]}...")
-    
-    # Show final blog post preview
-    console.print(f"\n[cyan]📄 Blog Post Preview:[/cyan]")
-    console.print("-" * 50)
-    preview = blog_result['final_post'][:500]
-    console.print(f"{preview}...")
-    console.print("-" * 50)
-    console.print(f"[green]Complete post saved to: {file_path}[/green]")
+    # Summary
+    if len(all_results) > 1:
+        console.print(f"\n[green]✓ Generated {len(all_results)} blog posts![/green]")
 
 
 @main.command()

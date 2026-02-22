@@ -5,6 +5,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 import whisper
 
 from .database import P3Database
@@ -183,3 +185,117 @@ class AudioTranscriber:
         secs = int(seconds % 60)
         millisecs = int((seconds % 1) * 1000)
         return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
+
+    def transcribe_all_parallel(self, num_workers: int = 4) -> int:
+        """Transcribe all pending episodes in parallel using ThreadPoolExecutor.
+        
+        Uses threading instead of multiprocessing to avoid DuckDB locking issues.
+        Threads share memory so DB writes are serialized safely.
+        
+        Args:
+            num_workers: Number of parallel worker threads (default 4)
+            
+        Returns:
+            Number of successfully transcribed episodes
+        """
+        episodes = self.db.get_episodes_by_status('downloaded')
+        
+        if not episodes:
+            print("[yellow]No episodes to transcribe[/yellow]")
+            return 0
+        
+        print(f"[blue]Transcribing {len(episodes)} episodes with {num_workers} parallel workers...[/blue]")
+        
+        transcribed_count = 0
+        failed_count = 0
+        
+        # Use ThreadPoolExecutor to run transcriptions in parallel
+        # Threads share memory so DB access is safe (GIL prevents simultaneous DB writes)
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            # Submit all tasks
+            futures = {
+                executor.submit(self.transcribe_episode, ep['id']): ep 
+                for ep in episodes
+            }
+            
+            # Collect results as they complete
+            completed = 0
+            for future in as_completed(futures):
+                episode = futures[future]
+                completed += 1
+                
+                try:
+                    if future.result():
+                        transcribed_count += 1
+                        print(f"[green]✓[/green] ({completed}/{len(episodes)}) {episode['title'][:60]}")
+                    else:
+                        failed_count += 1
+                        print(f"[red]✗[/red] ({completed}/{len(episodes)}) {episode['title'][:60]} - transcription failed")
+                except Exception as e:
+                    failed_count += 1
+                    print(f"[red]✗[/red] ({completed}/{len(episodes)}) {episode['title'][:60]} - {str(e)[:50]}")
+        
+        print(f"\n[green]Transcribed: {transcribed_count} episodes[/green]")
+        if failed_count > 0:
+            print(f"[yellow]Failed: {failed_count} episodes[/yellow]")
+        
+        return transcribed_count
+
+    @staticmethod
+    def _transcribe_worker(episode_id: int, whisper_model: str, use_parakeet: bool, 
+                          parakeet_model: str, db_path: str = "data/p3.duckdb") -> bool:
+        """Worker function for parallel transcription (runs in separate process).
+        
+        Static method allows pickling for multiprocessing.
+        Each worker gets its own DB connection.
+        
+        Args:
+            episode_id: ID of episode to transcribe
+            whisper_model: Whisper model size to use
+            use_parakeet: Whether to try Parakeet first
+            parakeet_model: Parakeet model to use
+            db_path: Path to database (default: data/p3.duckdb)
+            
+        Returns:
+            True if transcription succeeded, False otherwise
+        """
+        try:
+            # Each worker process needs its own DB connection
+            worker_db = P3Database(db_path)
+            
+            # Fetch episode
+            episodes = worker_db.get_episodes_by_status('downloaded')
+            episode = next((ep for ep in episodes if ep['id'] == episode_id), None)
+            
+            if not episode:
+                return False
+            
+            if not episode['file_path'] or not Path(episode['file_path']).exists():
+                return False
+            
+            # Create fresh transcriber instance in this worker process
+            worker_transcriber = AudioTranscriber(
+                db=worker_db,
+                whisper_model=whisper_model,
+                use_parakeet=use_parakeet,
+                parakeet_model=parakeet_model
+            )
+            
+            # Transcribe
+            if use_parakeet:
+                result = worker_transcriber.transcribe_with_parakeet(episode['file_path'])
+            else:
+                result = worker_transcriber.transcribe_with_whisper(episode['file_path'])
+            
+            if result:
+                worker_db.add_transcript_segments(episode_id, result['segments'])
+                worker_db.update_episode_status(episode_id, 'transcribed')
+                worker_db.conn.close()
+                return True
+            
+            worker_db.conn.close()
+            return False
+            
+        except Exception as e:
+            print(f"Worker error for episode {episode_id}: {e}")
+            return False

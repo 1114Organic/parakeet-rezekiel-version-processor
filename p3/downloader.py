@@ -2,16 +2,66 @@
 
 import os
 import requests
+import logging
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
 import feedparser
+from functools import wraps
 # from pydub import AudioSegment  # Disabled due to Python 3.13 compatibility
 import subprocess
 import tempfile
 
 from .database import P3Database
+
+# Configure logging
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# File handler (logs all messages)
+fh = logging.FileHandler(LOG_DIR / "downloader.log")
+fh.setLevel(logging.DEBUG)
+
+# Console handler (logs info and above)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# Formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+
+logger.addHandler(fh)
+logger.addHandler(ch)
+
+
+def retry_with_backoff(max_attempts: int = 3, base_delay: float = 1.0):
+    """Decorator for retrying functions with exponential backoff.
+    
+    Args:
+        max_attempts: Maximum number of retry attempts
+        base_delay: Initial delay in seconds (doubles each retry)
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_attempts:
+                        logger.error(f"Max retries ({max_attempts}) exceeded for {func.__name__}: {e}")
+                        raise
+                    
+                    delay = base_delay * (2 ** (attempt - 1))
+                    logger.warning(f"Attempt {attempt}/{max_attempts} failed for {func.__name__}: {e}. Retrying in {delay}s...")
+                    time.sleep(delay)
+        return wrapper
+    return decorator
 
 
 class PodcastDownloader:
@@ -31,14 +81,27 @@ class PodcastDownloader:
             return existing["id"]
         return self.db.add_podcast(name, url, category)
 
+    @retry_with_backoff(max_attempts=3, base_delay=2.0)
     def fetch_episodes(self, rss_url: str, limit: int = None) -> List[Dict]:
-        """Fetch episode metadata from RSS feed."""
+        """Fetch episode metadata from RSS feed with retry logic.
+        
+        Args:
+            rss_url: RSS feed URL
+            limit: Max episodes to fetch
+            
+        Returns:
+            List of episode metadata dicts
+            
+        Raises:
+            Exception: If all retry attempts fail
+        """
         if limit is None:
             limit = self.max_episodes
 
         try:
             # Fetch the feed content via requests first to avoid issues some
             # servers present when parsed directly from URL.
+            logger.debug(f"Fetching RSS feed: {rss_url}")
             resp = requests.get(rss_url, timeout=30)
             resp.raise_for_status()
             feed = feedparser.parse(resp.text)
@@ -111,12 +174,22 @@ class PodcastDownloader:
             return episodes
             
         except Exception as e:
-            print(f"Error fetching RSS feed {rss_url}: {e}")
-            return []
+            logger.error(f"Error fetching RSS feed {rss_url}: {e}")
+            raise  # Let the retry decorator handle retries
 
+    @retry_with_backoff(max_attempts=3, base_delay=2.0)
     def download_episode(self, episode_url: str, filename: str) -> Optional[str]:
-        """Download and normalize audio episode."""
+        """Download and normalize audio episode with retry logic.
+        
+        Args:
+            episode_url: URL of episode audio file
+            filename: Filename for saving
+            
+        Returns:
+            Path to downloaded file, or None if failed
+        """
         try:
+            logger.debug(f"Downloading episode: {filename}")
             # Download audio file
             response = requests.get(episode_url, stream=True, timeout=300)
             response.raise_for_status()
@@ -171,14 +244,13 @@ class PodcastDownloader:
                 os.unlink(input_path)
                 return str(output_path)
             else:
-                print(f"Fallback conversion failed: {result.stderr}")
+                logger.error(f"FFmpeg conversion failed for {filename}: {result.stderr}")
                 os.unlink(input_path)
                 return None
             
         except Exception as e:
-            print(f"Fallback conversion failed: {e}")
-            os.unlink(input_path)
-            return None
+            logger.error(f"Error downloading episode {filename}: {e}")
+            raise  # Let the retry decorator handle retries
 
     def process_feed(self, rss_url: str, force: bool = False, dry_run: bool = False) -> int:
         """Process a single RSS feed and download new episodes.
@@ -239,12 +311,16 @@ class PodcastDownloader:
         return downloaded_count
 
     def fetch_all_feeds(self, feeds_config: List[Dict], force: bool = False, dry_run: bool = False) -> Dict[str, int]:
-        """Process all configured RSS feeds.
+        """Process all configured RSS feeds with error isolation and rate limiting.
 
         `force` is a global override to re-download existing episodes.
         `dry_run` when True will only report actions without network I/O or DB writes.
+        
+        Feed-level errors are caught and logged; processing continues for other feeds.
+        Rate limiting: 1 second delay between feeds to avoid IP blocking.
         """
         results = {}
+        failed_feeds = []
 
         for feed_config in feeds_config:
             name = feed_config['name']
@@ -253,15 +329,27 @@ class PodcastDownloader:
             # Per-feed force/dry_run options override global flags
             feed_force = feed_config.get('force', force)
             feed_dry_run = feed_config.get('dry_run', dry_run)
-            print(f"Processing feed: {name}")
+            
+            try:
+                logger.info(f"Processing feed: {name}")
 
-            # Ensure podcast exists in database
-            self.add_feed(name, url, category)
+                # Ensure podcast exists in database
+                self.add_feed(name, url, category)
 
-            # Process episodes
-            count = self.process_feed(url, force=feed_force, dry_run=feed_dry_run)
-            results[name] = count
-
-            print(f"Downloaded {count} new episodes from {name}")
+                # Process episodes
+                count = self.process_feed(url, force=feed_force, dry_run=feed_dry_run)
+                results[name] = count
+                logger.info(f"Downloaded {count} new episodes from {name}")
+                
+            except Exception as e:
+                logger.error(f"Error processing feed '{name}' ({url}): {e}", exc_info=True)
+                failed_feeds.append(name)
+                results[name] = 0
+            
+            # Rate limiting: 1 second delay between feeds to avoid IP blocking
+            time.sleep(1)
+        
+        if failed_feeds:
+            logger.warning(f"Failed to process {len(failed_feeds)} feed(s): {', '.join(failed_feeds)}")
 
         return results

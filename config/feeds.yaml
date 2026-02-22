@@ -8,46 +8,32 @@ feeds:
     url: "https://feeds.simplecast.com/mAT9rqvu"
     category: "news"
 
-  - name: "All in Podcast"
-    url: "https://allinchamathjason.libsyn.com/rss"
-    category: "business"
-
-  - name: "Diary of a CEO"
-    url: "https://rss2.flightcast.com/xmsftuzjjykcmqwolaqn6mdn"
-    category: "business"
-
   - name: "This Week in Tech"
     url: "https://feeds.twit.tv/twit.xml"
     category: "technology"
 
   - name: "Product Coffee"
     url: "https://anchor.fm/s/bb90e50/podcast/rss"
-    cataegory: "technology"
+    category: "technology"
 
-  - name:  "Y Combinator Podcast"
+  - name: "Y Combinator Podcast"
     url: "https://blog.ycombinator.com/feed/"
     category: "startups"  
 
-# High-value business/investment podcasts
   - name: "Lenny's Podcast"
-    url: "https://feeds.simplecast.com/UZ12E8Qw"
+    url: "https://api.substack.com/feed/podcast/10845.rss"
     category: "product"
   
   - name: "Acquired"
-    url: "https://feeds.simplecast.com/kANlq7Qa"
+    url: "https://feeds.transistor.fm/acquired"
     category: "business"
     
-  - name: "Invest Like the Best"
-    url: "https://feeds.simplecast.com/1T87WVeA"
-    category: "investing"
-    
   - name: "The Twenty Minute VC"
-    url: "https://feeds.simplecast.com/6ea96d8b"
+    url: "https://thetwentyminutevc.libsyn.com/rss"
     category: "venture"
     
-  # AI/Tech focused
   - name: "The AI Breakdown"
-    url: "https://feeds.simplecast.com/dIdTXIB4"
+    url: "https://feed.podbean.com/theaibreakdown/feed.xml"
     category: "ai"
     
   - name: "Latent Space"
@@ -55,20 +41,29 @@ feeds:
     category: "ai"
     
   - name: "Masters in Business"
-    url: "https://feeds.bloomberg.fm/BLM5547189830"
+    url: "https://omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/4E4CD910-40A1-4619-A5F3-AE2B0012FFFF/5873A3CB-298F-40BC-B71F-AE2B0013000D/podcast.rss"
     category: "business"
 
 # Global settings
 settings:
   audio_format: "wav"
-  max_episodes_per_feed: 3
+  max_episodes_per_feed: 1
+  transcribe_workers: 4
+  
+  # Optional: customize auto-generated blog post topics
+  # If not specified, topics are automatically extracted from podcast summaries
+  auto_write_topics:
+    - "AI and Emerging Technologies"
+    - "Venture Capital Trends"
   cleanup_old_files: true
   cleanup_days: 30
   
   # Transcription
   whisper_model: "base"  # tiny, base, small, medium, large
-  parakeet_enabled: true  # Use Parakeet MLX on Apple Silicon
+  parakeet_enabled: false  # Use Parakeet MLX on Apple Silicon (disabled due to memory limits)
   parakeet_model: "mlx-community/parakeet-tdt-0.6b-v2"
+  # Number of parallel workers for `p3 transcribe` when run from the pipeline
+  transcribe_workers: 4
   
   # LLM cleaning
   llm_provider: "ollama"  # openai, anthropic, ollama

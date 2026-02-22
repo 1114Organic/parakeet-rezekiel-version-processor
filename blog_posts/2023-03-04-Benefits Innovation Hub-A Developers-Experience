@@ -1,0 +1,27 @@
+n our previous post, we introduced our software factory, Benefits Integration Platform, and how our technology solutions enable our product teams to create new features and functionalities that streamline Veterans benefits processing for the Veterans Affairs Benefits and Memorials portfolio. This article explores the developer experience, the “golden paths” or “paved roads” as they are called by some of the tech leaders, and how Booz Allen is implementing a better experience on the Platform.
+
+Customer service has been part of my career for a long time, even dating back to my earlier career managing English pubs in Atlanta, GA. Fostering an attitude of customer service is the foundation of how I work with teams, manage up and down the management chain, and especially how I work with customers. In restaurants, we focus the customer’s attention with good food and hospitality to make them happy and become a repeat customer. 
+
+But what about developers. How do we make them happier, more productive, and protect the contract and customer at the same time?
+
+A Developer Portal
+
+Developers and agile teams have their own business requirements to achieve—build me X, make Y easier to use, or make Z more efficient. The first step in making developers happy is to ask and listen. Ask them about their issues and pain points to help figure out how to streamline, remove friction, or eliminate toil in a helpful manner, and without mandating a solution. Creating the “golden path” templates for developers is removing all the non-functional requirements out of their way to make their processes more efficient. As a result, they can enjoy their life post-working hours and be more creative solving our client’s challenges. We can also support developers by making it easier to find documentation. Working examples of sharable/reusable resources, infrastructure, pipelines, frameworks, and archetypes can enable the developer and agile team to focus on building business value, innovation, and experimentation. Creating templates, tools, processes, self-service opportunities for autonomous teams, makes each developer more productive, and a force multiplier, for each product team delivering value to their end customer. 
+
+Software Delivery at Speed and Scale
+
+On our Platform, we have a Benefits Innovation Hub based on Spotify’s Backstage supporting our developer experience with software templates and easy to consume self-service capabilities, enabling product creation in a complicated and sometimes complex solution. When observability, best practices, and shared libraries are included from the start, this enables the developer and product team to focus on business value and provide guardrails to support the required repeatable processes that lead to an easily supported solution. Agile teams are encouraged to create sharable solutions, templates, libraries, or data streams to be added to our Benefits Innovation Hub, meeting our standards for sharing, and support for others to consume.
+
+“What good is an idea if it remains an idea? Try. Experiment. Iterate. Fail. Try again. Change the world.”  -Simon Sinek
+
+Having self-service capabilities to launch tools and software-templates enables our teams to experiment with creating new solutions while using our monitoring tools to prove out their hypothesis and iterating until complete. The emergent work we’re doing with the VA and across the government is new and innovative and requires trying out solutions with fast feedback to determine the proper direction and adjustments. Our culture, values and working agreements support experimentation and innovation. 
+
+Help us Build the Future of Software Innovation
+
+The work we do here is meaningful and has a significant impact on our customers—and in my case, the VA, and our Veterans. Whether or not you or your family are Veterans, it’s easy to get behind the mission and feel the rewards of serving in this capacity. 
+
+At Booz Allen we empower people to change the world. The agencies we support trust Booz Allen and our ability to deliver effective, cost-conscious solutions. This has helped us maintain our position as one of the top government contractors year after year.
+
+We are looking for talented DevOps & Software Engineers and Solution Architects to support our Backstage implementation, Kafka event driven architecture and our multi-tenanted Kubernetes platform who can be creative, learn fast and be a great human, all while supporting a tremendous mission. The issues we faced a few years ago will not be the same ones we will face tomorrow, so we need people who want to be on the cutting edge of technology. Join us—the world can’t wait.
+
+My thoughts are my own and do not necessarily reflect the views of Booz Allen Hamilton.

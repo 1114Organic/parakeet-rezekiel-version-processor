@@ -1,0 +1,30 @@
+At Booz Allen, we’re focused on delivering rapid value and impact at scale for federal government clients across the nation. In support of the Veterans Affairs Benefits and Memorial Services (VA BAM) portfolio, our team created a software factory designed to meet the client’s goals and outcomes while addressing the full product. Software factories, with the intent on delivering high velocity value to their customers, require that everything  align to the developer experience and support their journey towards building products. Our software factory drives development and integration by using landing zones, guardrails, and automated repeatable processes that support rapid software deployments with minimal human interaction.
+
+The BAM Portfolio provides technology solutions that support essential programs and services of the Veterans Benefits Administration (VBA), Board of Veteran Appeals (BVA), and National Cemetery Administration (NCA) organizations. The BAM Portfolio delivers initiatives for digitization, modernization, automation, and interoperability of systems and processes that provide Veterans and their families the most efficient and timely service and benefits. The VA BAM portfolio has multiple product lines providing the primary benefits services for Veterans, including ratings, awards, claims, appeals, and enterprise management of payments and processing for burial and memorials benefits, to name a few. The BAM portfolio also supports new legislation like the recent PACT Act, which will add a significant volume to processing benefits, resulting in new and advanced ways for our teams to solve complex issues with creative solutions.
+
+About Our Platform Teams
+
+Our platform teams are spread across the United States but are centralized at our Digital Hub in Charleston, SC. Our team of over 400 digital professionals in Charleston are engineers, analysts, and artists who find success, not as a group of siloed consultants, but as integrated, autonomous teams of digital innovators. We combine human-centered design, digital, and data science expertise to create meaningful customer experiences that improve how people interact with their government.
+
+To support our large program and 80+ scrum teams, we created a multi-tenant Kubernetes platform with support tools and automation of the software development processes with a primary goal of security, stability, and quality at speed. Our teams also created landing zones with tools and services to reduce sprint zero activities, enabling the developer and agile teams to focus on the mission-driven requirements for the BAM portfolio.
+
+We are focused on modernizing existing applications and providing new features, tools, and functionality for streamlining Veteran benefits processing. Through using the BIP Platform’s infrastructure, DevSecOps tools, Shared Services, Frameworks, Archetypes, and libraries, our agile teams can focus on the functional requirements to deliver business value while seamlessly providing benefits to our Veterans.
+
+Accelerators, Solutions & System Teams
+
+Our Platform Engineering team is part of a larger group—Accelerators, Solutions and Systems teams—all working in tandem to produce and support the BIP Platform and services. These teams focus on several solutions to support developers in their processes:
+
+The infrastructure-as-Code (IaC) using Terraform and Ansible to create our multi-tenanted Kubernetes platform along with the shared services and tools provided to the tenant customers.
+Reducing sprint zero activities with software quick-start deployments of approved shared libraries, archetypes, and frameworks that enables developers to focus on their functional requirements and take advantage of new approaches and technologies through quick experimentation. 
+Layering in customized pipelines to the developer experience with the tools needed to provide fast feedback and depth in security.
+Opinionated and prescriptive tools are added to the platform to either increase value or decrease risk for the tenants. 
+
+Operational readiness for the Platform and tenants means having insight into the platform and applications running on it through centralized monitoring and logging, in addition to modern application performance monitors and Artificial Intelligence/Machine learning (AI/ML) integration to support faster troubleshooting and resolution. Security in this multi-tenanted infrastructure relies on the Zero-Trust principles at each layer throughout the entire tech stack via code and policy, and reusability extends to compliance with a Major/Minor Authority to Operate (ATO) process designed to support product teams. 
+
+Join Our Team of Digital Innovators
+
+ We’re  seeking talented DevOps, Platform, and Cloud engineers who can be creative, learn fast, and be a great human, all while supporting a tremendous mission. The issues we faced a few years ago will not be the same ones we will face tomorrow, so we need people who want to be on that cutting edge of technology, working with huge data sets in a high-volume environment.
+
+Interested in using your technical curiosity and mission-driven passion to redefine healthcare?  Comment below or join the Booz Allen Talent Community to learn more about our growth opportunities, mentorship, and collaborative colleagues. Please indicate you’re interested in our Health/Science careers OR working on our Health Missions.
+
+My thoughts are my own and do not necessarily reflect the views of Booz Allen Hamilton.

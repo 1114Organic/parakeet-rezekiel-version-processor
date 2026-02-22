@@ -93,6 +93,21 @@ RSS → ffmpeg → Parakeet MLX → Ollama → DuckDB → Export
 - `p3 write --topic "Your Topic"` - Generate blog posts with AP English grading
 - `p3 status` - Show processing pipeline status
 
+## ⏰ Scheduling with cron
+
+Add a crontab entry to run the full pipeline on a schedule (example: daily at 02:00):
+
+```bash
+# edit your crontab (crontab -e) and add a line like this
+0 2 * * * /bin/bash -lc 'cd /Users/robertezekiel/GitHub/parakeet-youtube-processor && ./scripts/run_pipeline.sh >> logs/cron.log 2>&1'
+```
+
+For testing, run the script once with a dry-run to verify behavior:
+
+```bash
+DRY_RUN_ONLY=1 ./scripts/run_pipeline.sh
+```
+
 Fetch options
 
 - `p3 fetch --force`: Re-download existing episodes and update DB records (matched by episode `url`).
